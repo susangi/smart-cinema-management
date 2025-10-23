@@ -38,7 +38,7 @@ class RevenueRepositoryImpl implements RevenueRepository {
                          SUM(CASE WHEN (pay.status='REFUNDED' OR pay.amount<0) THEN ABS(pay.amount) ELSE 0 END) AS refunds
                        FROM payment pay
                        JOIN booking b   ON b.booking_id = pay.booking_id
-                       JOIN show_time st ON st.id = b.showtime_id
+                       JOIN schedules st ON st.id = b.showtime_id
                        JOIN movies m ON m.id = st.movie_id
                        WHERE DATE(pay.payment_date) BETWEEN :start AND :end
                          AND (:movieId IS NULL OR m.id = :movieId)
