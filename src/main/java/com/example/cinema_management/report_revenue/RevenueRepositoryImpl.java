@@ -24,7 +24,7 @@ class RevenueRepositoryImpl implements RevenueRepository {
         // basis: performance date (show session date) vs payment transaction date
         final String basisColumn = "PERFORMANCE_DATE".equalsIgnoreCase(p.basis())
                 ? "DATE(st.session_start_time)"
-                : "DATE(pay.payment_date)";
+                : "DATE(pay.paid_at)";
 
         final String sql = ("""
                 SELECT
@@ -32,21 +32,21 @@ class RevenueRepositoryImpl implements RevenueRepository {
                     m.id AS movie_id,
                     m.title AS movie_title,
                     st.id AS show_time_id,
-                    pay.payment_method,
+                    pay.method,
                     SUM(CASE WHEN pay.status = 'SUCCESS' AND pay.amount > 0
                              THEN pay.amount ELSE 0 END) AS sales,
                     SUM(CASE WHEN (pay.status = 'REFUNDED' OR pay.amount < 0)
                              THEN ABS(pay.amount) ELSE 0 END) AS refunds
                 FROM payments pay
-                JOIN booking b ON b.id = pay.booking_id
-                JOIN schedules st ON st.id = b.showtime_id
+                JOIN bookings b ON b.id = pay.booking_id
+                JOIN schedules st ON st.id = b.schedule_time_id
                 JOIN movies m ON m.id = st.movie_id
-                WHERE DATE(pay.payment_date) BETWEEN :start AND :end
+                WHERE DATE(pay.paid_at) BETWEEN :start AND :end
                   AND (:movieId IS NULL OR m.id = :movieId)
                   AND (:showTimeId IS NULL OR st.id = :showTimeId)
-                  AND (:method IS NULL OR pay.payment_method = :method)
+                  AND (:method IS NULL OR pay.method = :method)
                   AND pay.status IN ('SUCCESS','REFUNDED')
-                GROUP BY basis_date, m.id, m.title, st.id, pay.payment_method
+                GROUP BY basis_date, m.id, m.title, st.id, pay.method
                 ORDER BY basis_date, m.title
                 """).formatted(basisColumn);
 

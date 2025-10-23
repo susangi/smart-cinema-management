@@ -14,7 +14,7 @@ public class RegisterRequest {
     private String password;
 
     @NotNull
-    private Role role; // ADMIN or GATE_KEEPER or REGISTERED_USER
+    private Role role;
 
     public String getName() {
         return name;

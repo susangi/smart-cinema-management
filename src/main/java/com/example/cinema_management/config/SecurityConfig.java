@@ -40,8 +40,9 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .authenticationProvider(authProvider())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/", "/public/**", "/css/**", "/login", "/images/**",
-                                "/auth/register").permitAll()
+                        .requestMatchers("/", "/public/**", "/css/**", "/images/**", "/js/**",
+                                "/login", "/auth/register").permitAll()
+                        .requestMatchers("/booking/**").permitAll()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers("/gatekeeper/**").hasRole("GATE_KEEPER")
                         .anyRequest().authenticated()
@@ -49,9 +50,9 @@ public class SecurityConfig {
                 .formLogin(form -> form
                         .loginPage("/login")
                         .loginProcessingUrl("/perform_login")
-                        .defaultSuccessUrl("/admin/dashboard", true) // fallback
+                        .defaultSuccessUrl("/admin/dashboard", true)
                         .failureUrl("/login?error=true")
-                        .successHandler(loginAuditSuccessHandler)     // still logs & redirects by role
+                        .successHandler(loginAuditSuccessHandler)
                         .permitAll()
                 )
                 .logout(logout -> logout
@@ -63,4 +64,6 @@ public class SecurityConfig {
                 .httpBasic(Customizer.withDefaults());
         return http.build();
     }
+
+
 }
