@@ -58,22 +58,14 @@
             </a>
 
             <a
-              href="/admin/users"
+              href="/admin/screens"
               class="px-3 py-2 rounded-md font-medium transition"
-              th:classappend="${#strings.contains(path, '/admin/users')} ?
+              th:classappend="${#strings.contains(path, '/admin/screens')} ?
              'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800 hover:text-white'"
             >
-              Users
+              Screens
             </a>
 
-            <a
-              href="/admin/showtimes"
-              class="px-3 py-2 rounded-md font-medium transition"
-              th:classappend="${#strings.contains(path, '/admin/showtimes')} ?
-             'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800 hover:text-white'"
-            >
-              Showtimes
-            </a>
 
             <a
               href="/admin/pricing"
@@ -84,13 +76,22 @@
               Pricing
             </a>
 
+              <a
+                      href="/admin/schedules"
+                      class="px-3 py-2 rounded-md font-medium transition"
+                      th:classappend="${#strings.contains(path, '/admin/schedules')} ?
+             'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800 hover:text-white'"
+              >
+                  Schedules
+              </a>
+
             <a
-              href="/admin/reports"
+              href="/admin/reports/revenue"
               class="px-3 py-2 rounded-md font-medium transition"
               th:classappend="${#strings.contains(path, '/admin/reports')} ?
              'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800 hover:text-white'"
             >
-              Reports
+              Revenue Report
             </a>
           </nav>
 

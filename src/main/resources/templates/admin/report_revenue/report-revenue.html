@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Revenue Report</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <script>
+        tailwind.config = { darkMode: "class" };
+    </script>
+</head>
+
+<body class="">
+<div th:replace="admin/layout :: shell(~{::section})">
+    <section>
+        <div class="mb-6 bg-white">
+            <h2 class="text-2xl font-semibold">Revenue Report</h2>
+            <p class="text-slate-500 mb-4">
+                View and analyze total sales, refunds, and net revenue for selected movies and showtimes.
+            </p>
+            <div class="space-y-3">
+                <div class="bg-white border border-slate-200 rounded-2xl p-5 mb-4">
+
+                <form th:action="@{/admin/reports/revenue}" method="post"
+                      class="grid grid-cols-2 gap-4">
+                    <label class="flex flex-col">Basis
+                        <select name="basis" class="border border-gray-300 px-2 py-1 rounded">
+                            <option value="TRANSACTION_DATE" th:selected="${params.basis=='TRANSACTION_DATE'}">
+                                Transaction Date</option>
+                            <option value="PERFORMANCE_DATE" th:selected="${params.basis=='PERFORMANCE_DATE'}">
+                                Performance Date</option>
+                        </select>
+                    </label>
+                    <label class="flex flex-col">Payment Method
+                        <input name="paymentMethod" class="border border-gray-300 px-2 py-1 rounded"
+                               placeholder="e.g. CARD" />
+                    </label>
+                    <label class="flex flex-col">Start
+                        <input type="date" name="startDate" th:value="${params.startDate}"
+                               class="border border-gray-300 px-2 py-1 rounded" />
+                    </label>
+                    <label class="flex flex-col">End
+                        <input type="date" name="endDate" th:value="${params.endDate}"
+                               class="border border-gray-300 px-2 py-1 rounded" />
+                    </label>
+                    <label class="flex flex-col">Movie
+                        <select name="movieId" class="border border-gray-300 px-2 py-1 rounded">
+                            <option value="">All</option>
+                            <option th:each="m : ${movies}" th:value="${m.id}" th:text="${m.title}"></option>
+                        </select>
+                    </label>
+                    <label class="flex flex-col">Showtime (optional)
+                        <input name="showTimeId" class="border border-gray-300 px-2 py-1 rounded" placeholder="ID" />
+                    </label>
+                    <div class="col-span-2 flex gap-2">
+                        <button
+                                class="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-xl">Generate</button>
+                        <button formaction="/admin/reports/revenue/download" formmethod="post"
+                                class="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-xl">Download
+                            CSV</button>
+                    </div>
+                </form>
+
+                </div>
+                <div th:if="${report}" class="mt-8">
+                    <div class="mb-3">
+                        <span class="font-medium">Totals:</span>
+                        <span th:text="'Sales: ' + ${#numbers.formatDecimal(report.totalSales,1,2)}"></span>
+                        <span th:text="' | Refunds: ' + ${#numbers.formatDecimal(report.totalRefunds,1,2)}"></span>
+                        <span th:text="' | Net: ' + ${#numbers.formatDecimal(report.totalNet,1,2)}"
+                              class="font-semibold text-emerald-700"></span>
+                    </div>
+
+                    <table class="min-w-full bg-white border border-gray-300 rounded-2xl overflow-hidden">
+                        <thead class="bg-gray-200">
+                        <tr>
+                            <th class="text-left px-3 py-2">Date</th>
+                            <th class="text-left px-3 py-2">Movie</th>
+                            <th class="text-left px-3 py-2">Showtime</th>
+                            <th class="text-left px-3 py-2">Method</th>
+                            <th class="text-right px-3 py-2">Sales</th>
+                            <th class="text-right px-3 py-2">Refunds</th>
+                            <th class="text-right px-3 py-2">Net</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="r : ${report.rows}" class="border-t border-gray-300 hover:bg-gray-50">
+                            <td class="px-3 py-2" th:text="${r.basisDate}"></td>
+                            <td class="px-3 py-2" th:text="${r.movieTitle}"></td>
+                            <td class="px-3 py-2" th:text="${r.showTimeId}"></td>
+                            <td class="px-3 py-2" th:text="${r.paymentMethod}"></td>
+                            <td class="px-3 py-2 text-right" th:text="${#numbers.formatDecimal(r.sales,1,2)}">
+                            </td>
+                            <td class="px-3 py-2 text-right" th:text="${#numbers.formatDecimal(r.refunds,1,2)}">
+                            </td>
+                            <td class="px-3 py-2 text-right"
+                                th:text="${#numbers.formatDecimal(r.netRevenue,1,2)}"></td>
+                        </tr>
+                        <tr th:if="${report.rows.isEmpty()}" class="border-t border-gray-300">
+                            <td colspan="7" class="text-center text-slate-500 py-4">
+                                No Data
+                            </td>
+                        </tr>
+                        </tbody>
+                        <tfoot class="bg-gray-200">
+                        <tr>
+                            <th class="text-left px-3 py-2">Date</th>
+                            <th class="text-left px-3 py-2">Movie</th>
+                            <th class="text-left px-3 py-2">Showtime</th>
+                            <th class="text-left px-3 py-2">Method</th>
+                            <th class="text-right px-3 py-2">Sales</th>
+                            <th class="text-right px-3 py-2">Refunds</th>
+                            <th class="text-right px-3 py-2">Net</th>
+                        </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+</body>
+
+</html>

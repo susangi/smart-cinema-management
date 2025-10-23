@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en"
+      th:replace="~{site/layout :: layout(~{::title}, ~{::section})}">
+<title>Smart Cinema • Now Showing</title>
+
+<section class="space-y-8">
+
+    <!-- HERO -->
+    <div class="relative overflow-hidden rounded-2xl border border-slate-200 bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+        <div class="absolute inset-0 pointer-events-none [mask-image:radial-gradient(40%_40%_at_50%_0%,#000,transparent)]">
+            <div class="absolute inset-0 opacity-40 [background:radial-gradient(2px_2px_at_20px_20px,theme(colors.indigo.200),transparent)_0_0/24px_24px]"></div>
+        </div>
+
+        <div class="relative px-6 py-10 sm:px-10 md:px-14 md:py-14 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+            <div class="max-w-2xl">
+                <h1 class="text-3xl md:text-4xl font-semibold text-slate-900 tracking-tight">
+                    Catch the latest on the big screen
+                </h1>
+                <p class="mt-3 text-slate-600">
+                    Discover new releases, browse showtimes, and plan your perfect movie night.
+                </p>
+
+                <!-- Search (goes to /movies) -->
+                <form th:action="@{/movies}" method="get" class="mt-6">
+                    <div class="flex items-stretch gap-2">
+                        <input type="text" name="q" th:value="${q}"
+                               placeholder="Search by title, genre…"
+                               class="flex-1 rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 placeholder-slate-400
+                          focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none" />
+                        <button class="rounded-xl bg-indigo-600 text-white px-5 py-3 hover:bg-indigo-700 shadow-sm">
+                            Search
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Hero Artwork -->
+            <div class="shrink-0">
+                <div class="relative w-full max-w-[340px] aspect-[3/4] rounded-2xl overflow-hidden border border-slate-200 shadow-md">
+                    <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top,theme(colors.indigo.200),transparent_55%),linear-gradient(to_bottom_right,theme(colors.white),theme(colors.purple.100))]"></div>
+                    <div class="absolute inset-0 grid place-items-center text-5xl">🍿</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION HEADER -->
+    <div class="flex items-center justify-between">
+        <div>
+            <h2 class="text-xl font-semibold text-slate-900">Now Showing</h2>
+            <p class="text-sm text-slate-500">Browse all available movies and showtimes.</p>
+        </div>
+        <a th:href="@{/movies}" class="text-sm text-indigo-700 hover:text-indigo-800">See all &rarr;</a>
+    </div>
+
+    <!-- MOVIE GRID -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <article th:each="m : ${movies}"
+                 class="group bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col transition
+                    hover:border-indigo-200 hover:shadow-md">
+            <!-- Poster (ONLY posterPath; no posterUrl reference) -->
+            <a th:href="@{'/movies/' + ${m.id}}" class="relative block">
+                <img th:if="${m.posterPath != null}"
+                     th:src="@{'/uploads/posters/' + ${m.posterPath}}"
+                     alt="Poster"
+                     class="h-64 w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]" />
+                <div th:if="${m.posterPath == null}"
+                     class="h-64 w-full bg-slate-100 grid place-items-center text-slate-500">No Poster</div>
+
+                <!-- subtle shine -->
+                <span class="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition
+                     bg-[radial-gradient(120px_40px_at_var(--x,50%)_-20%,rgba(255,255,255,.45),transparent_80%)]"></span>
+            </a>
+
+            <!-- Body -->
+            <div class="p-4 flex-1 flex flex-col">
+                <a th:href="@{'/movies/' + ${m.id}}">
+                    <h3 class="font-semibold text-slate-900 leading-snug" th:text="${m.title}">Movie Title</h3>
+                </a>
+
+                <div class="mt-1 text-xs text-slate-600 flex items-center gap-2">
+                    <span th:if="${m.genre != null}" th:text="${m.genre}">Genre</span>
+                    <span class="hidden sm:inline" th:if="${m.durationMinutes != null}">•</span>
+                    <span th:if="${m.durationMinutes != null}" th:text="${m.durationMinutes + ' min'}">120 min</span>
+                    <span class="hidden sm:inline" th:if="${m.releaseDate != null}">•</span>
+                    <span th:if="${m.releaseDate != null}" th:text="${#temporals.format(m.releaseDate,'yyyy')}">2025</span>
+                </div>
+
+                <p class="mt-2 text-sm text-slate-600" th:text="${m.description}">
+                    A short synopsis shows here to tease the story…
+                </p>
+
+                <div class="mt-4 flex items-center gap-2">
+          <span th:if="${m.rating != null}"
+                class="inline-flex items-center gap-1 rounded bg-amber-50 px-2 py-0.5 text-amber-700 border border-amber-200 text-xs">
+            ★ <span th:text="${#numbers.formatDecimal(m.rating,1,'COMMA',2,'POINT')}">7.9</span>
+          </span>
+                    <span th:if="${m.active}" class="inline-flex items-center rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700 border border-green-200">
+            Now Showing
+          </span>
+                </div>
+
+                <div class="mt-auto pt-4 flex gap-2">
+                    <a th:href="@{'/movies/' + ${m.id}}"
+                       class="inline-flex items-center rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-700 hover:bg-slate-50">
+                        More Details
+                    </a>
+                    <a th:href="@{'/movies/' + ${m.id} + '/showtimes'}"
+                       class="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-white hover:bg-indigo-700">
+                        Show Times
+                    </a>
+                </div>
+            </div>
+        </article>
+    </div>
+
+    <!-- EMPTY STATE -->
+    <div th:if="${#lists.isEmpty(movies)}"
+         class="rounded-2xl border border-slate-200 bg-white p-10 text-center text-slate-600">
+        <div class="text-5xl mb-2">🎬</div>
+        <p class="text-lg">No movies available right now.</p>
+        <p class="text-sm text-slate-500">Please check back later for new releases.</p>
+    </div>
+</section>
+
+<!-- tiny JS to make the card "shine" follow the cursor -->
+<script>
+    document.addEventListener('mousemove', (e) => {
+        document.querySelectorAll('.group > a > span').forEach(el => {
+            const r = el.parentElement.getBoundingClientRect();
+            el.style.setProperty('--x', (e.clientX - r.left) + 'px');
+        });
+    });
+</script>
+</html>

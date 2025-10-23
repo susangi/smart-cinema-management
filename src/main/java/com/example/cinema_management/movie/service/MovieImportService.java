@@ -5,5 +5,6 @@ import com.example.cinema_management.movie.dto.MovieResponse;
 
 
 public interface MovieImportService {
-    MovieResponse importFromTmdb(long tmdbId, String language, String region);
+    MovieResponse importFromTmdb(long tmdbId, String lang, String region);
+
 }

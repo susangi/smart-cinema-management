@@ -36,9 +36,7 @@ public class Movie {
     private LocalDate releaseDate;
 
 
-    @Pattern(regexp = "G|PG|PG-13|R|NC-17|U|UA|A|\\w{1,10}")
-    @Column(length = 10)
-    private String rating;
+    private Double rating;
 
 
     @Column(length = 400)
@@ -64,8 +62,8 @@ public class Movie {
     public void setDurationMinutes(Integer durationMinutes) { this.durationMinutes = durationMinutes; }
     public LocalDate getReleaseDate() { return releaseDate; }
     public void setReleaseDate(LocalDate releaseDate) { this.releaseDate = releaseDate; }
-    public String getRating() { return rating; }
-    public void setRating(String rating) { this.rating = rating; }
+    public Double getRating() { return rating; }
+    public void setRating(Double rating) { this.rating = rating; }
     public String getPosterPath() { return posterPath; }
     public void setPosterPath(String posterPath) { this.posterPath = posterPath; }
     public boolean isActive() { return active; }

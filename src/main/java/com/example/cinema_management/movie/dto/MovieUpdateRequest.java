@@ -1,17 +1,47 @@
 package com.example.cinema_management.movie.dto;
 
+import jakarta.persistence.Column;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.PositiveOrZero;
+import lombok.Builder;
+import lombok.Data;
+import org.springframework.format.annotation.DateTimeFormat;
 
-import jakarta.validation.constraints.*;
 import java.time.LocalDate;
 
+@Data
+@Builder
+public class MovieUpdateRequest {
+    @NotBlank
+    private String title;
 
-public record MovieUpdateRequest(
-        @NotBlank @Size(max = 200) String title,
-        @Size(max = 1000) String description,
-        @Size(max = 50) String genre,
-        @Size(max = 20) String language,
-        @Positive Integer durationMinutes,
-        LocalDate releaseDate,
-        @Pattern(regexp = "G|PG|PG-13|R|NC-17|U|UA|A|\\w{1,10}") String rating,
-        Boolean active
-) {}
+    private String description;
+
+    @PositiveOrZero
+    private Integer durationMinutes;
+
+    private String language;
+    private String genre;
+
+    @Column(precision = 4, scale = 2)
+    private Double rating;
+
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+    private LocalDate releaseDate;
+    private Boolean active;
+
+    public MovieUpdateRequest() {}
+
+    public MovieUpdateRequest(String title, String description, Integer durationMinutes,
+                              String language, String genre, Double rating,
+                              LocalDate releaseDate, Boolean active) {
+        this.title = title;
+        this.description = description;
+        this.durationMinutes = durationMinutes;
+        this.language = language;
+        this.genre = genre;
+        this.rating = rating;
+        this.releaseDate = releaseDate;
+        this.active = active;
+    }
+}

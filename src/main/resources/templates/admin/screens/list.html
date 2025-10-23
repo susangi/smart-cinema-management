@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Screens • Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>tailwind.config={darkMode:'class'}</script>
+</head>
+<body>
+<div th:replace="~{admin/layout :: shell(~{::section})}">
+    <section>
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-3">
+            <div>
+                <nav class="text-sm text-slate-500 mb-1">
+                    <a th:href="@{/admin}" class="hover:text-slate-700">Admin</a> /
+                    <span class="text-slate-700">Screens</span>
+                </nav>
+                <h1 class="text-2xl font-semibold text-slate-900">Screens</h1>
+                <p class="text-sm text-slate-500">Manage auditoriums, seat maps, and amenities.</p>
+            </div>
+            <div class="flex gap-2">
+                <a th:href="@{/admin/screens/new}"
+                   class="rounded-md bg-indigo-600 text-white px-4 py-2.5 hover:bg-indigo-700">+ New Screen</a>
+            </div>
+        </div>
+
+        <!-- Search / Filters -->
+        <form th:action="@{/admin/screens}" method="get" class="mb-5">
+            <div class="flex flex-col sm:flex-row gap-2">
+                <input name="q" th:value="${q}" placeholder="Search by name or code…"
+                       class="flex-1 rounded-md border border-slate-300 bg-white px-3 py-2.5" />
+
+                <button class="rounded-md border border-slate-300 bg-white px-4 py-2.5 hover:bg-slate-50">Search</button>
+                <a th:href="@{/admin/screens}" class="rounded-md border border-slate-300 bg-white px-4 py-2.5 hover:bg-slate-50">Reset</a>
+            </div>
+        </form>
+
+        <!-- Table -->
+        <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-slate-200 table-fixed">
+                    <colgroup>
+                        <col style="width: 180px" /> <!-- Name/Code -->
+                        <col />                      <!-- Description -->
+                        <col style="width: 150px" /> <!-- Type -->
+                        <col style="width: 120px" /> <!-- Capacity -->
+                        <col style="width: 140px" /> <!-- Status -->
+                        <col style="width: 180px" /> <!-- Actions -->
+                    </colgroup>
+                    <thead class="bg-slate-50">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Name / Code</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Description</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Type</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Capacity</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Status</th>
+                        <th class="px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase">Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                    <tr th:each="s : ${page.content}" class="hover:bg-indigo-50/40 transition even:bg-slate-50/40">
+                        <td class="px-4 py-3 align-top">
+                            <div class="font-semibold text-slate-900 truncate" th:text="${s.name}">Screen 01</div>
+                            <div class="text-xs text-slate-500" th:text="${s.code}">SCR-01</div>
+                        </td>
+                        <td class="px-4 py-3 text-slate-700">
+                            <div class="line-clamp-2 max-w-[52ch]" th:text="${s.description}">
+                                Large auditorium with stadium seats.
+                            </div>
+
+                        </td>
+                        <td class="px-4 py-3 text-slate-700" th:text="${s.type}">2D</td>
+                        <td class="px-4 py-3 text-slate-700" th:text="${s.capacity}">180</td>
+                        <td class="px-4 py-3">
+              <span th:if="${s.active}"
+                    class="inline-flex items-center rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700 border border-green-200">Active</span>
+                            <span th:if="${!s.active}"
+                                  class="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600 border border-slate-200">Inactive</span>
+                        </td>
+                        <td class="px-4 py-3">
+                            <div class="flex justify-end gap-2">
+                                <a th:href="@{'/admin/screens/' + ${s.id} + '/edit'}"
+                                   class="rounded-md border border-slate-300 bg-white px-3 py-1.5 hover:bg-slate-50">Edit</a>
+                                <form th:action="@{'/admin/screens/' + ${s.id} + '/delete'}" method="post"
+                                      onsubmit="return confirm('Delete this screen?');">
+                                    <button class="rounded-md bg-red-50 text-red-700 border border-red-200 px-3 py-1.5 hover:bg-red-100">Delete</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(page.content)}">
+                        <td colspan="6" class="px-4 py-10 text-center text-slate-500">No screens found.</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Pagination -->
+        <div th:if="${page.totalPages>1}" class="mt-6 flex items-center justify-between text-slate-600 text-sm">
+            <div>Page <span th:text="${page.number+1}">1</span> of <span th:text="${page.totalPages}">1</span></div>
+            <div class="flex gap-2">
+                <a th:href="@{/admin/screens(page=${page.number-1},size=${page.size},q=${q},status=${status})}"
+                   th:classappend="${page.first} ? 'pointer-events-none opacity-40' : ''"
+                   class="rounded-md border border-slate-300 px-3 py-1.5 bg-white hover:bg-slate-50">Prev</a>
+                <a th:href="@{/admin/screens(page=${page.number+1},size=${page.size},q=${q},status=${status})}"
+                   th:classappend="${page.last} ? 'pointer-events-none opacity-40' : ''"
+                   class="rounded-md border border-slate-300 px-3 py-1.5 bg-white hover:bg-slate-50">Next</a>
+            </div>
+        </div>
+    </section>
+</div>
+</body>
+</html>

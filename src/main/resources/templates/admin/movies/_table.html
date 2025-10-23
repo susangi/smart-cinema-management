@@ -1,15 +1,34 @@
-<table th:fragment="table(page)">
-    <tr><th>Poster</th><th>Title</th><th>Genre</th><th>Active</th><th></th></tr>
-    <tr th:each="m : ${page.content}">
-        <td><img th:if="${m.posterUrl}" th:src="${m.posterUrl}" style="height:60px"/></td>
-        <td th:text="${m.title}"></td>
-        <td th:text="${m.genre}"></td>
-        <td th:text="${m.active}"></td>
-        <td>
-            <a th:href="@{'/admin/movies/' + ${m.id} + '/edit'}">Edit</a>
-            <form th:action="@{'/admin/movies/' + ${m.id} + '/delete'}" method="post" style="display:inline">
-                <button type="submit" onclick="return confirm('Delete this movie?')">Delete</button>
-            </form>
-        </td>
-    </tr>
-</table>
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Movies</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script> tailwind.config = { darkMode: 'class' } </script>
+</head>
+<body class="bg-slate-950 text-slate-100">
+<div th:replace="~{admin/layout :: shell(~{::section})}">
+    <section>
+
+        <div class="flex items-center justify-between mb-6">
+            <h1 class="text-3xl font-bold text-white">Movies</h1>
+            <div class="flex gap-2">
+                <a th:href="@{/admin/movies/new}"
+                   class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-sm font-medium text-white">+ Add Movie</a>
+                <a th:href="@{/admin/movies/tmdb}"
+                   class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-sm border border-slate-700">Import from TMDB</a>
+            </div>
+        </div>
+
+        <form th:action="@{/admin/movies}" method="get" class="flex flex-wrap gap-3 mb-6">
+            <input type="text" name="q" th:value="${q}" placeholder="Search title..."
+                   class="w-64 rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"/>
+            <button class="rounded-lg bg-indigo-600 hover:bg-indigo-500 px-4 py-2 text-sm font-medium text-white">Search</button>
+        </form>
+
+        <div th:replace="~{admin/movies/_table :: table(${page})}"></div>
+
+    </section>
+</div>
+</body>
+</html>

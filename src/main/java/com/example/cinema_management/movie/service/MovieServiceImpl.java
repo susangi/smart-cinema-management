@@ -1,116 +1,131 @@
-// src/main/java/com/example/cinema_management/movie/service/MovieServiceImpl.java
 package com.example.cinema_management.movie.service;
 
 import com.example.cinema_management.movie.dto.MovieCreateRequest;
-import com.example.cinema_management.movie.dto.MovieResponse;
 import com.example.cinema_management.movie.dto.MovieUpdateRequest;
+import com.example.cinema_management.movie.dto.MovieResponse;
 import com.example.cinema_management.movie.entity.Movie;
 import com.example.cinema_management.movie.mapper.MovieMapper;
 import com.example.cinema_management.movie.repository.MovieRepository;
-import com.example.cinema_management.screen.repository.ShowTimeRepository;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.*;
-import org.springframework.data.domain.ExampleMatcher.GenericPropertyMatchers;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
 @Service
-@Transactional
 public class MovieServiceImpl implements MovieService {
 
     private final MovieRepository repo;
-    private final ShowTimeRepository showTimes;
-    private final PosterStorageService storage;
-    private final String posterBaseUrl;
+    private final MovieMapper mapper;
+    private final PosterStorageService posterStorage;
 
-    public MovieServiceImpl(
-            MovieRepository repo,
-            ShowTimeRepository showTimes,
-            PosterStorageService storage,
-            @Value("${app.media.posters-url-base:/media/posters}") String posterBaseUrl) {
+    public MovieServiceImpl(MovieRepository repo, MovieMapper mapper, PosterStorageService posterStorage) {
         this.repo = repo;
-        this.showTimes = showTimes;
-        this.storage = storage;
-        this.posterBaseUrl = posterBaseUrl;
+        this.mapper = mapper;
+        this.posterStorage = posterStorage;
     }
 
-    // map entity -> response with proper poster URL handling
-    private MovieResponse toResp(Movie m) {
-        return MovieMapper.toResponse(m, posterBaseUrl);
+    @Override
+    @Transactional(readOnly = true)
+    public Page<MovieResponse> list(String q, Pageable pageable) {
+        String query = (q == null) ? "" : q;
+        return repo.findByTitleContainingIgnoreCaseAndActiveTrue(query, pageable)
+                .map(mapper::toResponse);
     }
+
+
+    @Override
+    public Page<MovieResponse> searchAdmin(String q, int page, int size) {
+        var pageable = PageRequest.of(page, size, Sort.by("title").ascending());
+        var query = (q == null) ? "" : q;
+        var results = repo.findByTitleContainingIgnoreCase(query, pageable);
+        return results.map(mapper::toResponse);
+    }
+
+
 
     @Override
     @Transactional(readOnly = true)
     public Page<MovieResponse> searchPublic(String q, int page, int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by("title").ascending());
-        return repo
-                .findByTitleContainingIgnoreCaseAndActiveTrue(q == null ? "" : q, pageable)
-                .map(this::toResp);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public Page<MovieResponse> searchAdmin(String q, int page, int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by("title").ascending());
-        if (q == null || q.isBlank()) {
-            return repo.findAll(pageable).map(this::toResp);
-        }
-        // Query-by-Example on title (contains, ignore case)
-        ExampleMatcher matcher = ExampleMatcher.matching()
-                .withIgnoreNullValues()
-                .withMatcher("title", GenericPropertyMatchers.contains().ignoreCase())
-                // ignore fields we’re not filtering on
-                .withIgnorePaths("active", "durationMinutes", "id", "posterPath", "rating");
-        Movie probe = new Movie();
-        probe.setTitle(q);
-        return repo.findAll(Example.of(probe, matcher), pageable).map(this::toResp);
+        int p = Math.max(page, 0);
+        int s = Math.max(size, 1);
+        Pageable pageable = PageRequest.of(p, s,
+                Sort.by("releaseDate").descending().and(Sort.by("title").ascending()));
+        return list(q, pageable);
     }
 
     @Override
     @Transactional(readOnly = true)
     public MovieResponse get(Long id) {
-        return repo.findById(id)
-                .map(this::toResp)
-                .orElseThrow(() -> new IllegalArgumentException("Movie not found"));
+        Movie m = repo.findById(id).orElseThrow(() -> new IllegalArgumentException("Movie not found: " + id));
+        return mapper.toResponse(m);
     }
 
     @Override
+    @Transactional
     public MovieResponse create(MovieCreateRequest req, MultipartFile poster) {
-        if (repo.existsByTitleIgnoreCase(req.title())) {
-            throw new IllegalArgumentException("Movie title already exists");
-        }
-        Movie m = new Movie();
-        MovieMapper.apply(m, req);
+        Movie m = mapper.toEntity(req);
         m = repo.save(m);
-        String posterPath = storage.storePoster(poster, m.getId());
-        if (posterPath != null) {
-            m.setPosterPath(posterPath);
+
+        if (poster != null && !poster.isEmpty()) {
+            String saved = posterStorage.storePoster(poster, m.getId());
+            if (saved != null && !saved.isBlank()) {
+                m.setPosterPath(saved);
+                m = repo.save(m);
+            }
         }
-        // entity is managed; changes will flush automatically
-        return toResp(m);
+        return mapper.toResponse(m);
     }
 
     @Override
-    public MovieResponse update(Long id, MovieUpdateRequest req, MultipartFile newPoster) {
-        Movie m = repo.findById(id).orElseThrow(() -> new IllegalArgumentException("Movie not found"));
-        String old = m.getPosterPath();
-        MovieMapper.apply(m, req);
-        if (newPoster != null && !newPoster.isEmpty()) {
-            String path = storage.storePoster(newPoster, m.getId());
-            m.setPosterPath(path);
-            storage.deletePosterIfExists(old);
+    @Transactional
+    public MovieResponse update(Long id, MovieUpdateRequest req, MultipartFile poster) {
+        Movie m = repo.findById(id).orElseThrow(() -> new IllegalArgumentException("Movie not found: " + id));
+
+        m.setTitle(req.getTitle());
+        m.setDescription(req.getDescription());
+        m.setDurationMinutes(req.getDurationMinutes());
+        m.setLanguage(req.getLanguage());
+        m.setGenre(req.getGenre());
+        m.setRating(req.getRating());
+        m.setReleaseDate(req.getReleaseDate());
+        m.setActive(Boolean.TRUE.equals(req.getActive()));
+
+        if (poster != null && !poster.isEmpty()) {
+            posterStorage.deletePosterIfExists(m.getPosterPath());
+            String saved = posterStorage.storePoster(poster, m.getId());
+            if (saved != null && !saved.isBlank()) {
+                m.setPosterPath(saved);
+            }
         }
-        return toResp(m);
+
+        m = repo.save(m);
+        return mapper.toResponse(m);
     }
 
     @Override
+    @Transactional
     public void delete(Long id) {
-        Movie m = repo.findById(id).orElseThrow(() -> new IllegalArgumentException("Movie not found"));
-        if (showTimes.existsByMovieId(id)) {
-            throw new IllegalStateException("Cannot delete - Movie has scheduled showtimes");
-        }
+        Movie m = repo.findById(id).orElseThrow(() -> new IllegalArgumentException("Movie not found: " + id));
+        posterStorage.deletePosterIfExists(m.getPosterPath());
         repo.delete(m);
-        storage.deletePosterIfExists(m.getPosterPath());
+    }
+
+    @Override
+    @Transactional
+    public MovieResponse toggleActive(Long id, boolean active) {
+        Movie m = repo.findById(id).orElseThrow(() -> new IllegalArgumentException("Movie not found: " + id));
+        m.setActive(active);
+        m = repo.save(m);
+        return mapper.toResponse(m);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<MovieResponse> findAllActive() {
+        return repo.findAllActive().stream()
+                .map(mapper::toResponse)
+                .toList();
     }
 }

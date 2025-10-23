@@ -1,28 +1,95 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org"><body>
-<h2>Import from TMDB</h2>
-<input type="text" id="q" placeholder="Search TMDB">
-<button type="button" onclick="doSearch()">Search</button>
-<div id="results"></div>
-<script>
-    function doSearch(){
-        const q = document.getElementById('q').value;
-        fetch(`/api/admin/tmdb/search?q=${encodeURIComponent(q)}`)
-            .then(r=>r.json()).then(data=>{
-            const wrap = document.getElementById('results');
-            wrap.innerHTML = '';
-            (data.results||[]).forEach(item=>{
-                const div = document.createElement('div');
-                const year = (item.release_date||'').split('-')[0]||'';
-                div.innerHTML = `<b>${item.title}</b> ${year? '('+year+')':''} ` +
-                    `<button onclick=\"imp(${item.id})\">Import</button>`;
-                wrap.appendChild(div);
-            });
-        });
-    }
-    function imp(id){
-        fetch(`/api/admin/tmdb/${id}/import`, {method:'POST'})
-            .then(()=>window.location.href='/admin/movies');
-    }
-</script>
-</body></html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Import from TMDB • Smart Cinema</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>tailwind.config={darkMode:'class'}</script>
+</head>
+<body>
+<div th:replace="~{admin/layout :: shell(~{::section})}">
+    <section>
+        <!-- Header -->
+        <div class="flex items-start justify-between mb-6">
+            <div>
+                <nav class="text-sm text-slate-500 mb-1">
+                    <a th:href="@{/admin}" class="hover:text-slate-700">Admin</a> /
+                    <a th:href="@{/admin/movies}" class="hover:text-slate-700">Movies</a> /
+                    <span class="text-slate-700">Import from TMDB</span>
+                </nav>
+                <h1 class="text-2xl font-semibold text-slate-900">Import from TMDB</h1>
+                <p class="text-sm text-slate-500">Search TMDB, preview details, and import directly to your catalog.</p>
+            </div>
+            <a th:href="@{/admin/movies}" class="rounded-md border border-slate-300 bg-white px-4 py-2.5 text-slate-700 hover:bg-slate-50">
+                Back to Movies
+            </a>
+        </div>
+
+        <!-- Search -->
+        <form method="get" th:action="@{/admin/movies/tmdb}" class="mb-6">
+            <div class="flex flex-col sm:flex-row gap-2">
+                <input name="q" th:value="${q}" placeholder="Search TMDB by title…"
+                       class="flex-1 rounded-md border border-slate-300 bg-white px-3 py-2.5 text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-indigo-500" />
+                <select name="lang" th:value="${lang}"
+                        class="rounded-md border border-slate-300 bg-white px-3 py-2.5 text-slate-900">
+                    <option value="en-US">English</option>
+                    <option value="es-ES">Spanish</option>
+                    <option value="fr-FR">French</option>
+                    <!-- add as needed -->
+                </select>
+                <button class="rounded-md border border-slate-300 bg-white px-4 py-2.5 text-slate-700 hover:bg-slate-50">Search</button>
+            </div>
+        </form>
+
+        <!-- Empty state -->
+        <div th:if="${#lists.isEmpty(results)}" class="rounded-lg border border-slate-200 bg-white p-6 text-slate-500">
+            Enter a title above to search TMDB.
+        </div>
+
+        <!-- Results -->
+        <div th:if="${!#lists.isEmpty(results)}">
+            <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                <div th:each="r : ${results}" class="rounded-lg border border-slate-200 bg-white p-4 flex gap-4">
+                    <div class="w-24 shrink-0">
+                        <img th:if="${r.poster_path != null}"
+                             th:src="@{|https://image.tmdb.org/t/p/w342/${#strings.substring(r.poster_path, r.poster_path.startsWith('/') ? 1 : 0)}|}"
+                             class="h-36 w-24 object-cover rounded border border-slate-200" alt="Poster"/>
+                        <div th:if="${r.poster_path == null}" class="h-36 w-24 bg-slate-100 rounded grid place-items-center text-slate-500 text-xs">
+                            No poster
+                        </div>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <h3 class="font-semibold text-slate-900" th:text="${r.title}">Title</h3>
+                        <div class="text-xs text-slate-500">
+                            <span th:text="${r.original_language}">en</span>
+                            <span th:if="${r.release_date != null and !#strings.isEmpty(r.release_date)}">
+                • <span th:text="${r.release_date}">2023-01-01</span>
+              </span>
+                        </div>
+                        <p class="mt-2 text-sm text-slate-600 line-clamp-3" th:text="${r.overview}">Overview</p>
+
+                        <form th:action="@{/admin/movies/tmdb/import}" method="post" class="mt-3">
+                            <input type="hidden" name="tmdbId" th:value="${r.id}"/>
+                            <button type="submit"
+                                    class="rounded-md bg-indigo-600 px-3 py-2 text-white hover:bg-indigo-700">
+                                Import
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Simple paging (Next/Prev) -->
+            <div class="mt-6 flex items-center justify-end gap-2">
+                <a th:href="@{/admin/movies/tmdb(q=${q},lang=${lang},page=${pageNum-1})}"
+                   th:classappend="${pageNum<=1} ? ' pointer-events-none opacity-40' : ''"
+                   class="rounded-md border border-slate-300 bg-white px-3 py-1.5 hover:bg-slate-50">Prev</a>
+                <a th:href="@{/admin/movies/tmdb(q=${q},lang=${lang},page=${pageNum+1})}"
+                   th:classappend="${pageNum>=totalPages} ? ' pointer-events-none opacity-40' : ''"
+                   class="rounded-md border border-slate-300 bg-white px-3 py-1.5 hover:bg-slate-50">Next</a>
+            </div>
+        </div>
+    </section>
+</div>
+</body>
+</html>

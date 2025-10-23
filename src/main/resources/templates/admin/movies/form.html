@@ -1,16 +1,109 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org"><body>
-<h1 th:text="${movieResp} != null ? 'Edit Movie' : 'New Movie'"></h1>
-<form th:action="${movieResp} != null ? @{'/admin/movies/' + ${movieId}} : @{/admin/movies}" method="post" enctype="multipart/form-data">
-    <input type="text" name="title" th:value="${movieResp} != null ? ${movieResp.title} : ${movie.title}" placeholder="Title" required>
-    <textarea name="description" th:text="${movieResp} != null ? ${movieResp.description} : ${movie.description}" placeholder="Description"></textarea>
-    <input type="text" name="genre" th:value="${movieResp} != null ? ${movieResp.genre} : ${movie.genre}" placeholder="Genre">
-    <input type="text" name="language" th:value="${movieResp} != null ? ${movieResp.language} : ${movie.language}" placeholder="Language">
-    <input type="number" name="durationMinutes" th:value="${movieResp} != null ? ${movieResp.durationMinutes} : ${movie.durationMinutes}" placeholder="Duration (min)">
-    <input type="date" name="releaseDate" th:value="${movieResp} != null ? ${movieResp.releaseDate} : ${movie.releaseDate}">
-    <input type="text" name="rating" th:value="${movieResp} != null ? ${movieResp.rating} : ${movie.rating}" placeholder="Rating e.g. PG-13">
-    <label><input type="checkbox" name="active" th:checked="${movieResp} == null ? ${movie.active} : ${movieResp.active}"> Active</label>
-    <input type="file" name="poster" accept="image/*">
-    <button type="submit">Save</button>
-</form>
-</body></html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${movieResp != null} ? 'Edit Movie' : 'New Movie'">Movie Form</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script> tailwind.config = { darkMode: 'class' } </script>
+</head>
+<body>
+<div th:replace="~{admin/layout :: shell(~{::section})}">
+    <section>
+        <div class="flex items-start justify-between mb-6">
+            <div>
+                <nav class="text-sm text-slate-500 mb-1">
+                    <a th:href="@{/admin}" class="hover:text-slate-700">Admin</a> /
+                    <a th:href="@{/admin/movies}" class="hover:text-slate-700">Movies</a> /
+                    <span class="text-slate-700" th:text="${movieResp != null} ? 'Edit' : 'New'">New</span>
+                </nav>
+                <h1 class="text-2xl font-semibold text-slate-900" th:text="${movieResp != null} ? 'Edit Movie' : 'Create Movie'">Create Movie</h1>
+            </div>
+            <a th:href="@{/admin/movies}" class="rounded-md border border-slate-300 bg-white px-4 py-2.5 text-slate-700 hover:bg-slate-50">
+                Back
+            </a>
+        </div>
+
+        <form th:action="${movieResp == null} ? @{/admin/movies} : @{'/admin/movies/' + ${movieResp.id}}"
+              method="post" enctype="multipart/form-data"
+              th:object="${movie}"
+              class="rounded-xl border border-slate-200 bg-white p-6 space-y-6 shadow-sm">
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Title *</label>
+                    <input th:field="*{title}" type="text" required
+                           class="w-full rounded-md border border-slate-300 bg-white px-3 py-2.5 text-slate-900 focus:ring-2 focus:ring-indigo-500" />
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Language</label>
+                    <input th:field="*{language}" type="text"
+                           class="w-full rounded-md border border-slate-300 bg-white px-3 py-2.5 text-slate-900" />
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Genre</label>
+                    <input th:field="*{genre}" type="text"
+                           class="w-full rounded-md border border-slate-300 bg-white px-3 py-2.5 text-slate-900" />
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Duration (min)</label>
+                    <input th:field="*{durationMinutes}" type="number" min="0"
+                           class="w-full rounded-md border border-slate-300 bg-white px-3 py-2.5 text-slate-900" />
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Release Date</label>
+                    <input th:field="*{releaseDate}" type="date"
+                           class="w-full rounded-md border border-slate-300 bg-white px-3 py-2.5 text-slate-900" />
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-1">Rating (0–10)</label>
+                    <input th:field="*{rating}" type="number" step="0.1" min="0" max="10"
+                           class="w-full rounded-md border border-slate-300 bg-white px-3 py-2.5 text-slate-900" />
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Description</label>
+                <textarea th:field="*{description}" rows="4"
+                          class="w-full rounded-md border border-slate-300 bg-white px-3 py-2.5 text-slate-900"></textarea>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Poster</label>
+                    <input name="poster" type="file" accept="image/*"
+                           class="block w-full cursor-pointer rounded-md border border-slate-300 bg-white text-slate-700 px-3 py-2.5
+                        file:mr-4 file:rounded-md file:border-0 file:bg-slate-100 file:px-3 file:py-2 file:text-slate-700 hover:file:bg-slate-200" />
+                    <p class="text-xs text-slate-500 mt-1">Uploading a new image replaces the current one.</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Current Poster</label>
+                    <img th:if="${movieResp != null and movieResp.posterPath != null}"
+                         th:src="@{'/uploads/posters/' + ${movieResp.posterPath}}"
+                         class="h-48 w-32 rounded border border-slate-200 object-cover" alt="Poster" />
+                    <div th:if="${movieResp == null or movieResp.posterPath == null}"
+                         class="h-48 w-32 bg-slate-100 rounded grid place-items-center text-slate-500 text-xs">No poster</div>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between">
+                <label class="inline-flex items-center gap-2 text-slate-700 text-sm">
+                    <input th:field="*{active}" type="checkbox"
+                           class="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
+                    Active
+                </label>
+
+                <button type="submit"
+                        class="rounded-md bg-indigo-600 px-5 py-2.5 text-white hover:bg-indigo-700">
+                    <span th:text="${movieResp != null} ? 'Update Movie' : 'Save Movie'">Save Movie</span>
+                </button>
+            </div>
+        </form>
+    </section>
+</div>
+</body>
+</html>

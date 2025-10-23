@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en"
+      th:replace="~{site/layout :: layout(~{::title}, ~{::section})}">
+<title th:text="${movie.title + ' • Smart Cinema'}">Movie • Smart Cinema</title>
+
+<section>
+    <a href="/" class="text-sm text-slate-600 hover:text-slate-800">&larr; Back to Home</a>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
+        <div>
+            <img th:if="${movie.posterPath != null}"
+                 th:src="@{'/uploads/posters/' + ${movie.posterPath}}"
+                 class="w-full rounded-lg border border-slate-200" alt="Poster"/>
+            <div th:if="${movie.posterPath == null}"
+                 class="h-80 w-full bg-slate-100 grid place-items-center text-slate-500 rounded-lg border border-slate-200">
+                No Poster
+            </div>
+        </div>
+
+        <div class="md:col-span-2">
+            <h1 class="text-2xl font-semibold" th:text="${movie.title}">Movie Title</h1>
+            <div class="mt-1 text-slate-600 text-sm">
+                <span th:text="${movie.genre}">Genre</span>
+                ·
+                <span th:text="${movie.durationMinutes + ' min'}">120 min</span>
+                <span th:if="${movie.releaseDate != null}">
+          · <span th:text="${#temporals.format(movie.releaseDate,'yyyy-MM-dd')}">2025-01-01</span>
+        </span>
+            </div>
+
+            <p class="mt-4 text-slate-700" th:text="${movie.description}">
+                Description…
+            </p>
+
+            <div class="mt-6 flex gap-3">
+                <a th:href="@{|/movies/${movie.id}/showtimes|}"
+                   class="inline-flex items-center rounded-md bg-indigo-600 px-4 py-2.5 text-white hover:bg-indigo-700">
+                    Show Times
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+</html>

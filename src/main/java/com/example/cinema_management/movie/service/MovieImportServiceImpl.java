@@ -1,8 +1,6 @@
 package com.example.cinema_management.movie.service;
 
-import com.example.cinema_management.integration.tmdb.TmdbClient;
-import com.example.cinema_management.integration.tmdb.dto.TmdbMovieDetails;
-import com.example.cinema_management.integration.tmdb.dto.TmdbReleaseDatesResponse;
+import com.example.cinema_management.integration.tmdb.TmdbDetailsService;
 import com.example.cinema_management.movie.dto.MovieCreateRequest;
 import com.example.cinema_management.movie.dto.MovieResponse;
 import com.example.cinema_management.movie.entity.Movie;
@@ -15,76 +13,86 @@ import java.time.LocalDate;
 import java.util.stream.Collectors;
 
 @Service
-@Transactional
 public class MovieImportServiceImpl implements MovieImportService {
 
-    private final TmdbClient tmdb;
+    private final TmdbDetailsService tmdb;
     private final MovieRepository movieRepo;
     private final MovieService movieService;
-    private final PosterStorageService posterStorage; // kept for optional downloads
+    private final PosterStorageService posterStorage;
+
     private final boolean downloadPosters;
-    private final String defaultLanguage;
-    private final String defaultRegion;
+    private final String tmdbImageBaseUrl;
+    private final String tmdbImageSize;
 
     public MovieImportServiceImpl(
-            TmdbClient tmdb,
+            TmdbDetailsService tmdb,
             MovieRepository movieRepo,
             MovieService movieService,
             PosterStorageService posterStorage,
-            @Value("${tmdb.download-posters:false}") boolean downloadPosters,
-            @Value("${tmdb.default-language:en-US}") String defaultLanguage,
-            @Value("${tmdb.default-region:US}") String defaultRegion) {
-
+            @Value("${tmdb.download-posters:true}") boolean downloadPosters,
+            @Value("${tmdb.image-base-url:https://image.tmdb.org/t/p/}") String tmdbImageBaseUrl,
+            @Value("${tmdb.image-size:w500}") String tmdbImageSize
+    ) {
         this.tmdb = tmdb;
         this.movieRepo = movieRepo;
         this.movieService = movieService;
         this.posterStorage = posterStorage;
         this.downloadPosters = downloadPosters;
-        this.defaultLanguage = defaultLanguage;
-        this.defaultRegion = defaultRegion;
+        this.tmdbImageBaseUrl = tmdbImageBaseUrl;
+        this.tmdbImageSize = tmdbImageSize;
     }
 
     @Override
-    public MovieResponse importFromTmdb(long tmdbId, String language, String region) {
-        String lang = (language == null) ? defaultLanguage : language;
-        String reg  = (region   == null) ? defaultRegion   : region;
-
-        TmdbMovieDetails details = tmdb.getMovie(tmdbId, lang);
-        if (details == null) throw new IllegalArgumentException("TMDB movie not found: " + tmdbId);
-
-        String rating = findCertification(tmdbId, reg);
-        String genres = (details.genres() == null) ? null :
-                details.genres().stream().map(TmdbMovieDetails.Genre::name).collect(Collectors.joining(", "));
-        LocalDate release = (details.release_date() == null || details.release_date().isBlank())
-                ? null : LocalDate.parse(details.release_date());
-
-        MovieCreateRequest req = new MovieCreateRequest(
-                details.title(), details.overview(), genres, details.original_language(),
-                (details.runtime() > 0 ? details.runtime() : null), release,
-                (rating == null || rating.isBlank()) ? "U" : rating, true
-        );
-
-        MovieResponse created = movieService.create(req, null);
-
-        String remotePosterUrl = tmdb.buildPosterUrl(details.poster_path());
-        if (remotePosterUrl != null && !downloadPosters) {
-            Movie m = movieRepo.findById(created.id()).orElseThrow();
-            m.setPosterPath(remotePosterUrl);
-            movieRepo.save(m);
+    @Transactional
+    public MovieResponse importFromTmdb(long tmdbId, String lang, String region) {
+        var d = tmdb.get(tmdbId, lang);
+        if (d.title() == null || d.title().isBlank()) {
+            throw new IllegalStateException("TMDB movie not found for id " + tmdbId);
         }
-        return movieService.get(created.id());
-    }
 
-    private String findCertification(long tmdbId, String region) {
-        TmdbReleaseDatesResponse rel = tmdb.getReleaseDates(tmdbId);
-        if (rel == null || rel.results() == null) return null;
-        return rel.results().stream()
-                .filter(r -> region.equalsIgnoreCase(r.iso_3166_1()))
-                .findFirst()
-                .flatMap(r -> r.release_dates().stream()
-                        .map(TmdbReleaseDatesResponse.ReleaseDate::certification)
-                        .filter(s -> s != null && !s.isBlank())
-                        .findFirst())
-                .orElse(null);
+        // dedupe by title
+        var existing = movieRepo.findFirstByTitleIgnoreCase(d.title());
+        if (existing.isPresent()) {
+            return movieService.get(existing.get().getId());
+        }
+
+        Integer runtime = (d.runtime() != null && d.runtime() > 0) ? d.runtime() : null;
+        String genreJoined = (d.genres() == null || d.genres().isEmpty())
+                ? null
+                : d.genres().stream().map(TmdbDetailsService.Genre::name).collect(Collectors.joining(", "));
+
+        LocalDate release = null;
+        if (d.release_date() != null && !d.release_date().isBlank()) {
+            try { release = LocalDate.parse(d.release_date()); } catch (Exception ignored) {}
+        }
+
+        var req = MovieCreateRequest.builder()
+                .title(d.title())
+                .description(d.overview())
+                .durationMinutes(runtime)
+                .language(d.original_language())
+                .genre(genreJoined)
+                .rating(d.vote_average())
+                .releaseDate(release)
+                .active(true)
+                .build();
+
+        // Save first (needed to name the poster)
+        var created = movieService.create(req, null);
+
+        // Download poster (optional)
+        if (downloadPosters && d.poster_path() != null && !d.poster_path().isBlank()) {
+            String normalized = d.poster_path().startsWith("/") ? d.poster_path().substring(1) : d.poster_path();
+            String remotePosterUrl = tmdbImageBaseUrl + tmdbImageSize + "/" + normalized;
+            String saved = posterStorage.storePosterFromUrl(remotePosterUrl, created.id());
+            if (saved != null) {
+                // persist poster path on entity
+                Movie m = movieRepo.findById(created.id()).orElseThrow();
+                m.setPosterPath(saved);
+                movieRepo.save(m);
+            }
+        }
+
+        return movieService.get(created.id());
     }
 }
