@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 public interface ScheduleRepository
         extends JpaRepository<Schedule, Long>, JpaSpecificationExecutor<Schedule> {
@@ -31,4 +32,23 @@ public interface ScheduleRepository
                                  @Param("startTime") LocalDateTime startTime,
                                  @Param("endTime") LocalDateTime endTime,
                                  @Param("ignoreId") Long ignoreId);
+
+    List<Schedule> findByMovieId(Long movieId);
+
+    Optional<Schedule> findById(Long id);
+
+    List<Schedule> findBySessionStartTimeBetween(LocalDateTime start, LocalDateTime end);
+
+    List<Schedule> findBySessionEndTimeBetween(LocalDateTime start, LocalDateTime end);
+
+    // Optional custom range query
+    @Query("""
+           select s
+           from Schedule s
+           where s.sessionStartTime >= :start
+             and s.sessionEndTime   <= :end
+           """)
+    List<Schedule> findActiveSessionsBetween(
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end);
 }

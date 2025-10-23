@@ -3,6 +3,8 @@ package com.example.cinema_management.pricing;
 import com.example.cinema_management.pricing.dto.PricingCreateRequest;
 import com.example.cinema_management.pricing.dto.PricingTypeUpdateRequest;
 import com.example.cinema_management.pricing.dto.PricingUpdateRequest;
+import com.example.cinema_management.schedule.entity.Schedule;
+import com.example.cinema_management.schedule.repository.ScheduleRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -16,6 +18,7 @@ import java.time.LocalDateTime;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -23,10 +26,12 @@ public class PricingService {
 
     private final PricingRepository pricingRepo;
     private final PricingTypeRepository typeRepo;
+    private final ScheduleRepository scheduleRepository;
 
-    public PricingService(PricingRepository pricingRepo, PricingTypeRepository typeRepo) {
+    public PricingService(PricingRepository pricingRepo, PricingTypeRepository typeRepo, ScheduleRepository scheduleRepository) {
         this.pricingRepo = pricingRepo;
         this.typeRepo = typeRepo;
+        this.scheduleRepository = scheduleRepository;
     }
 
     public Page<Pricing> page(Pageable pageable) {
@@ -111,5 +116,15 @@ public class PricingService {
 
         row.setPrice(price);
         typeRepo.save(row);
+    }
+
+    public BigDecimal computeTotal(Long scheduleId, int adult, int child) {
+        Pricing pricing = scheduleRepository.findById(scheduleId)
+                .map(Schedule::getPricing)
+                .orElseThrow(() -> new IllegalArgumentException("Pricing not found"));
+
+        BigDecimal adultTotal = pricing.getAdultPrice().multiply(BigDecimal.valueOf(adult));
+        BigDecimal childTotal = pricing.getChildPrice().multiply(BigDecimal.valueOf(child));
+        return adultTotal.add(childTotal);
     }
 }
