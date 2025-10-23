@@ -31,4 +31,19 @@ public interface ScheduleRepository
                                  @Param("startTime") LocalDateTime startTime,
                                  @Param("endTime") LocalDateTime endTime,
                                  @Param("ignoreId") Long ignoreId);
+
+
+    @Query("""
+        select s from Schedule s
+         join fetch s.screen sc
+         join fetch s.pricing p
+        where s.movie.id = :movieId
+          and s.status = com.example.cinema_management.schedule.entity.Schedule$Status.ACTIVE
+          and s.sessionStartTime >= :now
+        order by s.sessionStartTime asc
+    """)
+    List<Schedule> findUpcomingByMovie(@Param("movieId") Long movieId,
+                                       @Param("now") LocalDateTime now);
+
+
 }

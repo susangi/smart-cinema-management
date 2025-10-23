@@ -11,6 +11,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
 @Service
 public class MovieServiceImpl implements MovieService {
 
@@ -117,5 +119,13 @@ public class MovieServiceImpl implements MovieService {
         m.setActive(active);
         m = repo.save(m);
         return mapper.toResponse(m);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<MovieResponse> findAllActive() {
+        return repo.findAllActive().stream()
+                .map(mapper::toResponse)
+                .toList();
     }
 }
