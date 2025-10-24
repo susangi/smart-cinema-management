@@ -66,4 +66,7 @@ public interface ScheduleRepository
     List<Schedule> findActiveSessionsBetween(
             @Param("start") LocalDateTime start,
             @Param("end") LocalDateTime end);
+
+    // @Query("SELECT COUNT(s) FROM Schedule s WHERE s.sessionStartTime > CURRENT_TIMESTAMP AND s.status = 'ACTIVE'")
+    // long countUpcomingSchedules();
 }
