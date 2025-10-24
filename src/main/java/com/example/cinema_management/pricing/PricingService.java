@@ -19,6 +19,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * PricingService
@@ -225,6 +226,18 @@ public class PricingService {
         return adultTotal.add(childTotal).setScale(2, BigDecimal.ROUND_HALF_UP);
     }
 
+    @Transactional(readOnly = true)
+    public BigDecimal computePrice(Long scheduleId, boolean isAdult) {
+        Schedule schedule = scheduleRepository.findById(scheduleId)
+                .orElseThrow(() -> new RuntimeException("Schedule not found with id: " + scheduleId));
+
+        Pricing pricing = schedule.getPricing();
+        if (pricing == null) {
+            throw new RuntimeException("No pricing found for schedule: " + scheduleId);
+        }
+
+        return isAdult ? pricing.getAdultPrice() : pricing.getChildPrice();
+    }
 
     private void upsertType(Long pricingId, SeatType type, BigDecimal price) {
         Objects.requireNonNull(pricingId, "pricingId must not be null");
@@ -232,10 +245,31 @@ public class PricingService {
 
         BigDecimal sanitized = sanitizePrice(price);
 
+        Pricing pricing = pricingRepo.findById(pricingId)
+                .orElseThrow(() -> new RuntimeException("Pricing not found with id: " + pricingId));
+
         PricingType row = typeRepo.findByPricingIdAndType(pricingId, type)
                 .orElseGet(() -> {
                     PricingType t = new PricingType();
-                    t.setPricingId(pricingId);
+                    t.setPricing(pricing);
+                    t.setType(type);
+                    return t;
+                });
+
+        row.setPrice(sanitized);
+        typeRepo.save(row);
+    }
+
+    private void setPriceForType(Long pricingId, SeatType type, BigDecimal price) {
+        BigDecimal sanitized = sanitizePrice(price);
+
+        PricingType row = typeRepo.findByPricingIdAndType(pricingId, type)
+                .orElseGet(() -> {
+                    PricingType t = new PricingType();
+                    // Create a proxy Pricing entity with just the ID
+                    Pricing pricing = new Pricing();
+                    pricing.setId(pricingId);
+                    t.setPricing(pricing);
                     t.setType(type);
                     return t;
                 });
@@ -263,4 +297,5 @@ public class PricingService {
                 ? auth.getName()
                 : "system";
     }
+
 }

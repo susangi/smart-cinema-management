@@ -39,10 +39,9 @@ public class Pricing {
     @LastModifiedBy
     private String updatedBy;
 
-    @OneToMany(mappedBy = "pricingId", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "pricing", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<PricingType> pricingTypes;
 
-    /* lifecycle hooks to set timestamps */
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();

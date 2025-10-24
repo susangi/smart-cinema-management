@@ -1,0 +1,100 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Booking Details</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 text-gray-900 antialiased">
+<div class="min-h-screen flex items-center justify-center p-6">
+    <div class="bg-white shadow-lg rounded-2xl max-w-2xl w-full p-8">
+        <h1 class="text-2xl font-semibold mb-1">Booking Details</h1>
+        <p class="text-sm text-slate-500 mb-6">
+            <span class="font-medium" th:text="${movieTitle}">Movie</span> •
+            <span th:text="${showTimeText}">Fri, 24 Oct 2025 07:30 PM</span> •
+            Screen <span class="font-medium" th:text="${screenName}">01</span>
+        </p>
+
+        <form th:action="@{/booking/create}" method="post" class="space-y-5" id="bookingForm">
+            <input type="hidden" name="scheduleId" th:value="${scheduleId}"/>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <label class="block">
+                    <span class="block text-sm font-medium text-gray-700 mb-1">Adult seats</span>
+                    <input id="adultCount" type="number" name="adultCount" min="0" value="1" required
+                           class="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-none"/>
+                    <span class="text-xs text-gray-500">Price: Rs. <span id="adultPrice" th:text="${adultPrice}">0</span></span>
+                </label>
+
+                <label class="block">
+                    <span class="block text-sm font-medium text-gray-700 mb-1">Child seats</span>
+                    <input id="childCount" type="number" name="childCount" min="0" value="0" required
+                           class="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-none"/>
+                    <span class="text-xs text-gray-500">Price: Rs. <span id="childPrice" th:text="${childPrice}">0</span></span>
+                </label>
+            </div>
+
+            <label class="block">
+                <span class="block text-sm font-medium text-gray-700 mb-1">Email (for QR codes)</span>
+                <input type="email" name="buyerEmail" placeholder="you@example.com" required
+                       class="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-none"/>
+            </label>
+
+            <div class="bg-gray-50 border border-gray-200 rounded-xl p-4">
+                <div class="flex justify-between text-sm text-gray-600">
+                    <div>Adult Subtotal</div>
+                    <div>Rs. <span id="adultSubtotal">0</span></div>
+                </div>
+                <div class="flex justify-between text-sm text-gray-600">
+                    <div>Child Subtotal</div>
+                    <div>Rs. <span id="childSubtotal">0</span></div>
+                </div>
+                <div class="border-t my-3"></div>
+                <div class="flex justify-between text-lg font-semibold">
+                    <div>Total</div>
+                    <div>Rs. <span id="grandTotal" th:text="${initialTotal}">0</span></div>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-end gap-3">
+                <a th:href="@{|/movies/${movieId}/showtimes|}"
+                   class="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-2 text-gray-700 hover:bg-gray-50">
+                    Back
+                </a>
+                <button type="submit"
+                        class="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-white hover:bg-emerald-700
+                       focus:outline-none focus:ring-2 focus:ring-emerald-300">
+                    Go to payment
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    const adultPrice = parseFloat(document.getElementById('adultPrice').textContent || '0');
+    const childPrice = parseFloat(document.getElementById('childPrice').textContent || '0');
+    const adultCountEl = document.getElementById('adultCount');
+    const childCountEl = document.getElementById('childCount');
+    const adultSubtotalEl = document.getElementById('adultSubtotal');
+    const childSubtotalEl = document.getElementById('childSubtotal');
+    const grandTotalEl = document.getElementById('grandTotal');
+
+    function recalc() {
+      const ac = Math.max(0, parseInt(adultCountEl.value || '0', 10));
+      const cc = Math.max(0, parseInt(childCountEl.value || '0', 10));
+      const aSub = ac * adultPrice;
+      const cSub = cc * childPrice;
+      const total = aSub + cSub;
+      adultSubtotalEl.textContent = aSub.toFixed(2).replace(/\.00$/,'');
+      childSubtotalEl.textContent = cSub.toFixed(2).replace(/\.00$/,'');
+      grandTotalEl.textContent = total.toFixed(2).replace(/\.00$/,'');
+    }
+
+    adultCountEl.addEventListener('input', recalc);
+    childCountEl.addEventListener('input', recalc);
+    recalc();
+</script>
+</body>
+</html>

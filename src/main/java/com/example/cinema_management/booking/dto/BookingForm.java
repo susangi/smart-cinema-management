@@ -3,7 +3,6 @@ package com.example.cinema_management.booking.dto;
 import com.example.cinema_management.payment.entity.PaymentMethod;
 
 public record BookingForm(
-        Long movieId,
         Long scheduleId,
         Integer adultCount,
         Integer childCount,

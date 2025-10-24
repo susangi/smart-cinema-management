@@ -1,76 +1,79 @@
 package com.example.cinema_management.booking.controller;
 
-import com.example.cinema_management.booking.dto.BookingForm;
 import com.example.cinema_management.booking.service.BookingService;
-import com.example.cinema_management.movie.repository.MovieRepository;
-import com.example.cinema_management.payment.entity.PaymentMethod;
-import com.example.cinema_management.schedule.repository.ScheduleRepository;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import java.security.Principal;
+import java.util.Map;
 
 @Controller
 @RequestMapping("/booking")
 public class BookingController {
-    private final MovieRepository movieRepo;
-    private final ScheduleRepository scheduleRepo;
+
     private final BookingService bookingService;
 
-    public BookingController(MovieRepository movieRepo, ScheduleRepository scheduleRepo, BookingService bookingService) {
-        this.movieRepo = movieRepo;
-        this.scheduleRepo = scheduleRepo;
+    public BookingController(BookingService bookingService) {
         this.bookingService = bookingService;
     }
 
-    @GetMapping("/")
-    public String bookStart(Model m) {
-        m.addAttribute("movies", movieRepo.findAll());
-        m.addAttribute("form", new BookingForm(null, null, 1, 0, "", PaymentMethod.ONLINE));
-        return "web/book-start";
+    @GetMapping("/start")
+    public String start(@RequestParam("scheduleId") Long scheduleId, Model model) {
+        var vm = bookingService.buildStartView(scheduleId);
+        model.addAllAttributes(Map.of(
+                "scheduleId", vm.getScheduleId(),
+                "movieId", vm.getMovieId(),
+                "movieTitle", vm.getMovieTitle(),
+                "screenName", vm.getScreenName(),
+                "showTimeText", vm.getShowTimeText(),
+                "adultPrice", vm.getAdultPrice(),
+                "childPrice", vm.getChildPrice(),
+                "initialTotal", vm.getAdultPrice()
+        ));
+        return "site/movies/booking-details";
     }
 
-    @GetMapping("/schedule")
-    public String chooseSchedule(@RequestParam Long movieId, Model m) {
-        m.addAttribute("movies", movieRepo.findAll());
-        m.addAttribute("selectedMovieId", movieId);
-        m.addAttribute("schedules", scheduleRepo.findByMovieId(movieId));
-        m.addAttribute("form", new BookingForm(movieId, null, 1, 0, "", PaymentMethod.ONLINE));
-        return "web/book-start";
+    @PostMapping("/create")
+    public String create(
+            @RequestParam Long scheduleId,
+            @RequestParam int adultCount,
+            @RequestParam int childCount,
+            @RequestParam String buyerEmail,
+            RedirectAttributes ra
+    ) {
+        var bookingId = bookingService.createPendingBooking(scheduleId, adultCount, childCount, buyerEmail);
+        ra.addFlashAttribute("bookingId", bookingId);
+
+        return "redirect:/booking/checkout/" + bookingId;
     }
 
-    @PostMapping("/")
-    public String create(@ModelAttribute BookingForm form, RedirectAttributes ra, Principal principal) {
-        Long userId = (principal == null ? null : Long.valueOf(1)); // map to your user id
-        Long id = bookingService.startBooking(form, userId);
-        ra.addAttribute("id", id);
-        return "redirect:/booking/checkout/{id}";
+    @GetMapping("/checkout/{bookingId}")
+    public String checkout(@PathVariable Long bookingId, Model model) {
+        model.addAttribute("bookingId", bookingId);
+        return "site/movies/checkout";
     }
 
-    @GetMapping("/checkout/{id}")
-    public String checkout(@PathVariable Long id, Model m) {
-        m.addAttribute("bookingId", id);
-        return "web/checkout";
+    @PostMapping("/checkout/{bookingId}/pay-online")
+    public String payOnline(@PathVariable Long bookingId) {
+        bookingService.captureOnlinePayment(bookingId);
+        var vm = bookingService.confirmAndBuildVM(bookingId);
+
+        return "redirect:/booking/confirmed/" + bookingId;
     }
 
-    @PostMapping("/checkout/{id}/pay-online")
-    public String payOnline(@PathVariable Long id, RedirectAttributes ra) {
-        ra.addAttribute("id", id);
-        return "redirect:/booking/bookings/{id}/confirmed";
-    }
-    @PostMapping("/checkout/{id}/pay-cash")
-    public String payCash(@PathVariable Long id, RedirectAttributes ra) {
-        ra.addAttribute("id", id);
-        return "redirect:/booking/bookings/{id}/confirmed";
+    @PostMapping("/checkout/{bookingId}/pay-cash")
+    public String payCash(@PathVariable Long bookingId) {
+        bookingService.markCashPayment(bookingId);
+
+        return "redirect:/booking/confirmed/" + bookingId;
     }
 
-    @GetMapping("/bookings/{id}/confirmed")
-    public String confirmed(@PathVariable Long id, Model m) {
-        var vm = bookingService.simulatePaymentAndIssue(id);
-        m.addAttribute("vm", vm);
-        return "web/booking-confirmation";
+    @GetMapping("/confirmed/{bookingId}")
+    public String confirmed(@PathVariable Long bookingId, Model model) {
+        var vm = bookingService.buildConfirmationVM(bookingId);
+        model.addAttribute("vm", vm);
+
+        return "site/movies/booking-confirmation";
     }
 }
-

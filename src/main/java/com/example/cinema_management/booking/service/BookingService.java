@@ -2,16 +2,20 @@ package com.example.cinema_management.booking.service;
 
 import com.example.cinema_management.booking.dto.BookingConfirmationVM;
 import com.example.cinema_management.booking.dto.BookingForm;
+import com.example.cinema_management.booking.dto.BookingStartVM;
 import com.example.cinema_management.booking.entity.Booking;
 import com.example.cinema_management.booking.entity.BookingStatus;
 import com.example.cinema_management.booking.repository.BookingRepository;
 import com.example.cinema_management.movie.entity.Movie;
 import com.example.cinema_management.movie.repository.MovieRepository;
 import com.example.cinema_management.payment.entity.Payment;
+import com.example.cinema_management.payment.entity.PaymentMethod;
 import com.example.cinema_management.payment.entity.PaymentStatus;
 import com.example.cinema_management.payment.repository.PaymentRepository;
 import com.example.cinema_management.pricing.PricingService;
+import com.example.cinema_management.schedule.entity.Schedule;
 import com.example.cinema_management.schedule.repository.ScheduleRepository;
+import com.example.cinema_management.screen.entity.Screen;
 import com.example.cinema_management.ticket.entity.Ticket;
 import com.example.cinema_management.ticket.entity.TicketStatus;
 import com.example.cinema_management.ticket.repository.TicketRepository;
@@ -21,6 +25,7 @@ import jakarta.annotation.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -51,9 +56,37 @@ public class BookingService {
         this.mail = mail;
     }
 
+    // New method to build the start view
+    public BookingStartVM buildStartView(Long scheduleId) {
+        var schedule = scheduleRepo.findById(scheduleId).orElseThrow();
+        var movie = schedule.getMovie();
+        var screen = schedule.getScreen();
+
+        var adultPrice = pricingService.computePrice(scheduleId, true);
+        var childPrice = pricingService.computePrice(scheduleId, false);
+
+        var showTimeText = DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm")
+                .format(schedule.getSessionStartTime());
+
+        return new BookingStartVM(
+                scheduleId,
+                movie.getId(),
+                movie.getTitle(),
+                screen.getName(),
+                showTimeText,
+                adultPrice,
+                childPrice
+        );
+    }
+
+    @Transactional
+    public Long createPendingBooking(Long scheduleId, Integer adultCount, Integer childCount, String buyerEmail) {
+        var form = new BookingForm(scheduleId, adultCount, childCount, buyerEmail, PaymentMethod.ONLINE);
+        return startBooking(form, null);
+    }
+
     @Transactional
     public Long startBooking(BookingForm form, @Nullable Long currentUserId) {
-        var movie = movieRepo.findById(form.movieId()).orElseThrow();
         var schedule = scheduleRepo.findById(form.scheduleId()).orElseThrow();
 
         int adults = Math.max(0, form.adultCount() == null ? 0 : form.adultCount());
@@ -69,6 +102,8 @@ public class BookingService {
         booking.setTotalPrice(total);
         booking.setStatus(BookingStatus.PENDING);
         booking.setCreatedAt(LocalDateTime.now());
+        booking.setAdultCount(adults);
+        booking.setChildCount(children);
         booking = bookingRepo.save(booking);
 
         var pay = new Payment();
@@ -79,10 +114,64 @@ public class BookingService {
         pay.setCreatedAt(LocalDateTime.now());
         paymentRepo.save(pay);
 
-        booking.setAdultCount(adults);
-        booking.setChildCount(children);
-
         return booking.getId();
+    }
+
+    // New method to capture online payment
+    @Transactional
+    public void captureOnlinePayment(Long bookingId) {
+        // In a real application, this would integrate with a payment gateway
+        // For simulation, we just mark it as successful
+        var payment = paymentRepo.findByBookingId(bookingId).orElseThrow();
+        payment.setStatus(PaymentStatus.SUCCESS);
+        payment.setPaidAt(LocalDateTime.now());
+        paymentRepo.save(payment);
+    }
+
+    @Transactional
+    public void markCashPayment(Long bookingId) {
+        var payment = paymentRepo.findByBookingId(bookingId).orElseThrow();
+        payment.setMethod(PaymentMethod.CASH);
+        payment.setStatus(PaymentStatus.SUCCESS);
+        payment.setPaidAt(LocalDateTime.now());
+        paymentRepo.save(payment);
+    }
+
+    // New method to confirm and build VM
+    @Transactional
+    public BookingConfirmationVM confirmAndBuildVM(Long bookingId) {
+        var booking = bookingRepo.findById(bookingId).orElseThrow();
+        booking.setStatus(BookingStatus.CONFIRMED);
+        bookingRepo.save(booking);
+
+        return simulatePaymentAndIssue(bookingId);
+    }
+
+    // New method to build confirmation VM
+    public BookingConfirmationVM buildConfirmationVM(Long bookingId) {
+        var booking = bookingRepo.findById(bookingId).orElseThrow();
+        var schedule = booking.getSchedule();
+
+        var showTimeText = DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm")
+                .format(schedule.getSessionStartTime());
+
+        var tickets = ticketRepo.findByBookingId(bookingId);
+        var ticketVMs = tickets.stream()
+                .map(ticket -> {
+                    var payload = "TICKET:" + ticket.getId() + ";SCHEDULE:" + schedule.getId();
+                    String base64 = qr.pngBase64(payload, 256);
+                    return new BookingConfirmationVM.TicketVM(ticket.getId(), ticket.getSeatNumber(), base64);
+                })
+                .collect(Collectors.toList());
+
+        return new BookingConfirmationVM(
+                booking.getId(),
+                movieTitle(schedule.getMovie().getId()),
+                screenName(schedule.getScreen().getId()),
+                showTimeText,
+                booking.getTotalPrice(),
+                ticketVMs
+        );
     }
 
     @Transactional
@@ -149,11 +238,10 @@ public class BookingService {
     }
 
     private String movieTitle(Long movieId) {
-
         return movieRepo.findById(movieId).map(Movie::getTitle).orElse("-");
     }
-    private String screenName(Long screenId) {
 
+    private String screenName(Long screenId) {
         return "Screen " + screenId;
     }
 }
