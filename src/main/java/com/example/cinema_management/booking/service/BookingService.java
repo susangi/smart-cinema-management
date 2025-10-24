@@ -124,7 +124,7 @@ public class BookingService {
                 <p>QRs attached below:</p>
                 %s
             """.formatted(
-                    booking.getMovie().getTitle(),
+                    booking.getSchedule().getMovie().getTitle(),
                     booking.getSchedule().getSessionStartTime().toString(),
                     booking.getTotalPrice().toPlainString(),
                     IntStream.range(0, pngs.size())
