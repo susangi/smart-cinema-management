@@ -5,7 +5,9 @@ import jakarta.validation.constraints.NotBlank;
 import org.springframework.data.annotation.LastModifiedBy;
 import org.springframework.data.annotation.LastModifiedDate;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "pricing")
@@ -37,7 +39,9 @@ public class Pricing {
     @LastModifiedBy
     private String updatedBy;
 
-    /* lifecycle hooks to set timestamps */
+    @OneToMany(mappedBy = "pricing", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private List<PricingType> pricingTypes;
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
@@ -105,5 +109,22 @@ public class Pricing {
 
     public void setUpdatedBy(String updatedBy) {
         this.updatedBy = updatedBy;
+    }
+
+    public BigDecimal getAdultPrice() {
+        return getPriceFor(SeatType.ADULT);
+    }
+
+    public BigDecimal getChildPrice() {
+        return getPriceFor(SeatType.CHILD);
+    }
+
+    private BigDecimal getPriceFor(SeatType type) {
+        if (pricingTypes == null) return BigDecimal.ZERO;
+        return pricingTypes.stream()
+                .filter(t -> t.getType() == type)
+                .map(PricingType::getPrice)
+                .findFirst()
+                .orElse(BigDecimal.ZERO);
     }
 }

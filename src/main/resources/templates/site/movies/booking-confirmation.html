@@ -1,0 +1,63 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Booking Confirmed</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 text-gray-900 antialiased">
+<div class="min-h-screen flex items-center justify-center p-6">
+    <div class="bg-white shadow-lg rounded-2xl max-w-2xl w-full p-8 text-center">
+        <!-- Header -->
+        <div class="mb-6">
+            <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto mb-3 h-12 w-12 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+            </svg>
+            <h1 class="text-3xl font-semibold text-emerald-600">Booking Confirmed!</h1>
+            <p class="text-gray-500 mt-1">Your tickets are ready — check your QR codes below.</p>
+        </div>
+
+        <div class="bg-gray-50 border border-gray-100 rounded-xl p-4 mb-6 text-sm text-gray-700">
+            <p class="mb-1">
+                <span class="font-semibold text-gray-900" th:text="${vm.movieTitle}">Movie Title</span>
+            </p>
+            <p class="mb-1">
+                <span class="font-medium">Showtime:</span>
+                <span th:text="${vm.showTimeText}">Fri, 24 Oct 2025 07:30 PM</span>
+            </p>
+            <p class="mb-1">
+                <span class="font-medium">Screen:</span>
+                <span th:text="${vm.screenName}">Screen 01</span>
+            </p>
+            <p class="font-semibold mt-2">
+                Total: <span th:text="${vm.total}">Rs. 2500</span>
+            </p>
+        </div>
+
+        <div>
+            <h3 class="text-lg font-medium text-gray-800 mb-3">Your Tickets</h3>
+
+            <div class="flex flex-wrap justify-center gap-4">
+                <div th:each="t : ${vm.tickets}"
+                     class="bg-white border border-gray-200 shadow-sm rounded-lg p-4 w-48">
+                    <div class="text-sm text-gray-700 mb-2">
+                        Seat: <b th:text="${t.label}">A1</b>
+                    </div>
+                    <img th:src="'data:image/png;base64,' + ${t.qrBase64}"
+                         alt="QR"
+                         class="w-full h-auto rounded-md border border-gray-100 shadow-sm"/>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-8 text-sm text-gray-500">
+            <p>Thank you for booking with <span class="font-medium text-emerald-600">Smart Cinema</span>!</p>
+            <a th:href="@{/}" class="inline-block mt-3 text-emerald-600 hover:text-emerald-700 font-medium">
+                Back to Home →
+            </a>
+        </div>
+    </div>
+</div>
+</body>
+</html>

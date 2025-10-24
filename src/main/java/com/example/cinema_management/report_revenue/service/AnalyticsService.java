@@ -9,8 +9,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * Performs analytical computations on revenue data sets,
+ * such as building trend charts of net revenue by date.
+ */
 @Service
 public class AnalyticsService {
+
+    /**
+     * Builds a chronological list of (date, netRevenue) points
+     * by grouping and summing revenue rows by their basis date.
+     */
     public List<RevenueReportDTO.Point> buildNetTrend(List<RevenueRow> rows) {
         return rows.stream()
                 .collect(Collectors.groupingBy(RevenueRow::basisDate,
@@ -22,4 +31,3 @@ public class AnalyticsService {
                 .toList();
     }
 }
-

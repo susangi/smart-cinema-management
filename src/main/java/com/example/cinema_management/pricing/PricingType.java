@@ -17,9 +17,9 @@ public class PricingType {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // keep it simple: scalar FK (no @ManyToOne)
-    @Column(name = "pricing_id", nullable = false)
-    private Long pricingId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "pricing_id", nullable = false)
+    private Pricing pricing;
 
     @NotNull
     @Enumerated(EnumType.STRING)
@@ -32,12 +32,12 @@ public class PricingType {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
 
-    // getters/setters
+    // getters and setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
-    public Long getPricingId() { return pricingId; }
-    public void setPricingId(Long pricingId) { this.pricingId = pricingId; }
+    public Pricing getPricing() { return pricing; }
+    public void setPricing(Pricing pricing) { this.pricing = pricing; }
 
     public SeatType getType() { return type; }
     public void setType(SeatType type) { this.type = type; }
