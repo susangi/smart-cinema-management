@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en"
+      th:replace="~{site/layout :: layout(~{::title}, ~{::section})}">
+<title>Home • Smart Cinema</title>
+
+<section>
+    <h1 class="text-2xl font-semibold mb-6">Now Showing</h1>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <article th:each="m : ${movies}"
+                 class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden flex flex-col">
+            <img th:if="${m.posterPath != null}"
+                 th:src="@{'/uploads/posters/' + ${m.posterPath}}"
+                 class="h-64 w-full object-cover" alt="Poster"/>
+            <div th:if="${m.posterPath == null}"
+                 class="h-64 w-full bg-slate-100 grid place-items-center text-slate-500">No Poster</div>
+
+            <div class="p-4 flex-1 flex flex-col">
+                <h2 class="font-semibold text-lg mb-1" th:text="${m.title}">Movie Title</h2>
+                <p class="text-sm text-slate-600 line-clamp-3 mb-4" th:text="${m.description}">
+                    Synopsis goes here…
+                </p>
+                <div class="mt-auto flex gap-2">
+                    <a th:href="@{|/movies/${m.id}|}"
+                       class="inline-flex items-center rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-700 hover:bg-slate-50">
+                        More Details
+                    </a>
+                    <a th:href="@{|/movies/${m.id}/showtimes|}"
+                       class="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-white hover:bg-indigo-700">
+                        Show Times
+                    </a>
+                </div>
+            </div>
+        </article>
+    </div>
+
+    <div th:if="${#lists.isEmpty(movies)}" class="text-slate-500 mt-10">
+        No movies available.
+    </div>
+</section>
+</html>

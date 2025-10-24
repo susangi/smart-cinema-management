@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en"
+      th:replace="~{site/layout :: layout(~{::title}, ~{::section})}">
+<title th:text="${movie.title + ' • Show Times • Smart Cinema'}">Show Times • Smart Cinema</title>
+
+<section>
+    <div class="flex items-center justify-between">
+        <div>
+            <a th:href="@{'/movies/' + ${movie.id}}" class="text-sm text-slate-600 hover:text-slate-800">&larr; Back to Details</a>
+            <h1 class="text-2xl font-semibold mt-1" th:text="${movie.title}">Movie Title</h1>
+            <p class="text-sm text-slate-500">Upcoming showtimes</p>
+        </div>
+        <a th:href="@{/templates/public}" class="text-sm text-slate-600 hover:text-slate-800">Movies</a>
+    </div>
+
+    <div class="mt-6 bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+        <div class="divide-y divide-slate-100">
+            <!-- Showtimes list -->
+            <div th:each="s : ${showtimes}" class="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div class="space-y-0.5">
+                    <div class="text-slate-900 font-medium"
+                         th:text="${#temporals.format(s.sessionStartTime,'EEE, dd MMM yyyy • HH:mm')}">
+                        Thu, 23 Oct 2025 • 18:00
+                    </div>
+                    <div class="text-sm text-slate-600">
+                        Ends <span th:text="${#temporals.format(s.sessionEndTime,'HH:mm')}">20:30</span>
+                        · Screen: <span class="font-medium" th:text="${s.screen.name}">Screen 1</span>
+                        (<span th:text="${s.screen.code}">SC-001</span>)
+                    </div>
+                </div>
+                <div class="flex gap-2">
+          <span class="inline-flex items-center rounded bg-amber-50 px-2 py-0.5 text-amber-700 border border-amber-200 text-xs"
+                th:text="${s.pricing.name}">Standard</span>
+                    <!-- Book button placeholder -->
+                    <!-- <a href="#" class="inline-flex items-center rounded-md bg-indigo-600 px-3 py-1.5 text-white hover:bg-indigo-700">Book</a> -->
+                </div>
+            </div>
+
+            <!-- Empty state -->
+            <div th:if="${#lists.isEmpty(showtimes)}" class="p-6 text-slate-500">
+                No showtime found.
+            </div>
+        </div>
+    </div>
+</section>
+</html>

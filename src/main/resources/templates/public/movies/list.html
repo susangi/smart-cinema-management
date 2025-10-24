@@ -1,14 +1,82 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org"><body>
-<h1>Now Showing</h1>
-<form th:action="@{/movies}" method="get">
-    <input type="text" name="q" th:value="${q}" placeholder="Search movies">
-    <button type="submit">Search</button>
-</form>
-<div th:each="m : ${page.content}">
-    <a th:href="@{'/movies/' + ${m.id}}">
-        <img th:if="${m.posterUrl}" th:src="${m.posterUrl}" style="height:160px"/>
-        <div th:text="${m.title}"></div>
-    </a>
-</div>
-</body></html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en"
+      th:replace="~{site/layout :: layout(~{::title}, ~{::section})}">
+<title>Movies • Smart Cinema</title>
+
+<section>
+    <div class="flex items-start justify-between mb-6">
+        <div>
+            <h1 class="text-2xl font-semibold text-slate-900">Now Showing</h1>
+            <p class="text-sm text-slate-500">Browse all available movies and showtimes.</p>
+        </div>
+    </div>
+
+    <!-- Search (GET /movies?q=...) -->
+    <form th:action="@{/movies}" method="get" class="mb-5">
+        <div class="flex flex-col sm:flex-row gap-2">
+            <input type="text" name="q" th:value="${q}" placeholder="Search movies..."
+                   class="flex-1 rounded-md border border-slate-300 bg-white px-3 py-2.5 text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none" />
+            <div class="flex gap-2">
+                <button type="submit"
+                        class="rounded-md border border-slate-300 bg-white px-4 py-2.5 text-slate-700 hover:bg-slate-50">
+                    Search
+                </button>
+                <!-- Reset = just link to /movies without params -->
+                <a th:href="@{/movies}"
+                   class="rounded-md border border-slate-300 bg-white px-4 py-2.5 text-slate-700 hover:bg-slate-50">
+                    Reset
+                </a>
+            </div>
+        </div>
+    </form>
+
+    <!-- Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <article th:each="m : ${page.content}"
+                 class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden flex flex-col">
+            <a th:href="@{'/movies/' + ${m.id}}">
+                <img th:if="${m.posterPath != null}"
+                     th:src="@{'/uploads/posters/' + ${m.posterPath}}"
+                     class="h-64 w-full object-cover" alt="Poster"/>
+                <div th:if="${m.posterPath == null}"
+                     class="h-64 w-full bg-slate-100 grid place-items-center text-slate-500">No Poster</div>
+            </a>
+
+            <div class="p-4 flex-1 flex flex-col">
+                <a th:href="@{'/movies/' + ${m.id}}">
+                    <h2 class="font-semibold text-lg mb-1 line-clamp-2" th:text="${m.title}">Movie Title</h2>
+                </a>
+                <p class="text-sm text-slate-600 line-clamp-3 mb-4" th:text="${m.description}">Synopsis…</p>
+                <div class="mt-auto flex gap-2">
+                    <a th:href="@{'/movies/' + ${m.id}}"
+                       class="inline-flex items-center rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-700 hover:bg-slate-50">
+                        More Details
+                    </a>
+                    <a th:href="@{'/movies/' + ${m.id} + '/showtimes'}"
+                       class="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-white hover:bg-indigo-700">
+                        Show Times
+                    </a>
+                </div>
+            </div>
+        </article>
+    </div>
+
+    <!-- Empty -->
+    <div th:if="${#lists.isEmpty(page.content)}" class="text-slate-500 mt-10">
+        No movies found.
+    </div>
+
+    <!-- Pagination -->
+    <div th:if="${page.totalPages > 1}" class="mt-6 flex items-center justify-between text-slate-600 text-sm">
+        <div>Page <span th:text="${page.number + 1}">1</span> of <span th:text="${page.totalPages}">1</span></div>
+        <div class="flex gap-2">
+            <a th:href="@{/movies(page=${page.number - 1},size=${page.size},q=${q})}"
+               th:classappend="${page.first} ? 'opacity-40 pointer-events-none' : ''"
+               class="rounded-md border border-slate-300 px-3 py-1.5 bg-white hover:bg-slate-50">Prev</a>
+            <a th:href="@{/movies(page=${page.number + 1},size=${page.size},q=${q})}"
+               th:classappend="${page.last} ? 'opacity-40 pointer-events-none' : ''"
+               class="rounded-md border border-slate-300 px-3 py-1.5 bg-white hover:bg-slate-50">Next</a>
+        </div>
+    </div>
+</section>
+</html>

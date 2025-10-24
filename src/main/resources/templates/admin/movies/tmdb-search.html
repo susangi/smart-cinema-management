@@ -25,7 +25,7 @@
     function imp(id){
         fetch(`/api/admin/tmdb/${id}/import`, {method:'POST'})
             .then(r=>r.json())
-            .then(()=>window.location.href='/admin/movies');
+            .then(()=>window.location.href='../../public/movies');
     }
 </script>
 </body>
