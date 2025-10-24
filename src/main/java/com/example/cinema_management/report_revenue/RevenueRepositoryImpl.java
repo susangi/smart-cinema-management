@@ -10,6 +10,10 @@ import java.math.BigDecimal;
 import java.sql.Date;
 import java.util.List;
 
+/**
+ * Native-query implementation of the RevenueRepository.
+ * Fetches aggregated sales and refund data between date ranges.
+ */
 @Repository
 class RevenueRepositoryImpl implements RevenueRepository {
 
@@ -19,9 +23,12 @@ class RevenueRepositoryImpl implements RevenueRepository {
         this.em = em;
     }
 
+    /**
+     * Executes the native SQL revenue aggregation query using parameters
+     * such as date range, movie ID, showtime ID, and payment method.
+     */
     @Override
     public List<RevenueRow> findRevenue(RevenueReportParams p) {
-        // basis: performance date (show session date) vs payment transaction date
         final String basisColumn = "PERFORMANCE_DATE".equalsIgnoreCase(p.basis())
                 ? "DATE(st.session_start_time)"
                 : "DATE(pay.paid_at)";
