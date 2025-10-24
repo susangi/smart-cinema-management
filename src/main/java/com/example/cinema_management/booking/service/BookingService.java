@@ -95,16 +95,17 @@ public class BookingService {
 
         var ticketsVM = new ArrayList<BookingConfirmationVM.TicketVM>();
         int totalQty = booking.getAdultCount() + booking.getChildCount();
-        for (int i = 0; i <= totalQty; i++) {
+        for (int i = 1; i <= totalQty; i++) {
             var ticket = new Ticket();
             ticket.setBooking(booking);
             ticket.setQrCode(UUID.randomUUID().toString());
 
             ticket.setStatus(TicketStatus.NEW);
-            ticket.setSeatNumber("A" + i); // demo label; replace with seat map
+            ticket.setSeatNumber(String.valueOf(i));
             ticket.setCreatedAt(LocalDateTime.now());
             ticket = ticketRepo.save(ticket);
 
+            // keep your current QR payload format:
             var payload = "TICKET:" + ticket.getId() + ";SCHEDULE:" + booking.getSchedule().getId();
             String base64 = qr.pngBase64(payload, 256);
             ticketsVM.add(new BookingConfirmationVM.TicketVM(ticket.getId(), ticket.getSeatNumber(), base64));

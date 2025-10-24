@@ -38,13 +38,17 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
+                .csrf(csrf -> csrf
+                .ignoringRequestMatchers("/gate/api/validate")
+                )
                 .authenticationProvider(authProvider())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/", "/public/**", "/css/**", "/images/**", "/js/**",
                                 "/login", "/auth/register").permitAll()
                         .requestMatchers("/booking/**").permitAll()
+                        .requestMatchers("/movies/**").permitAll()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/gatekeeper/**").hasRole("GATE_KEEPER")
+                        .requestMatchers("/gate/**").hasAnyRole("GATE_KEEPER","ADMIN")
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form

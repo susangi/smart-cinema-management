@@ -9,6 +9,6 @@ public class HomeController {
 
     @GetMapping("/")
     public String homePage() {
-        return "index"; // loads index.html from templates/
+        return "movies.list"; // loads index.html from templates/
     }
 }

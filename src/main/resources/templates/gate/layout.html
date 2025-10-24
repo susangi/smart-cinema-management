@@ -22,7 +22,7 @@
           class="max-w-7xl mx-auto flex items-center justify-between h-16 px-4"
         >
           <a
-            href="/admin/dashboard"
+            href="/gatekeeper"
             class="flex items-center gap-2 font-semibold text-white"
           >
             <svg
@@ -38,68 +38,11 @@
             Smart Cinema
           </a>
 
-          <nav class="hidden md:flex gap-4 text-sm">
-            <a
-              href="/admin/dashboard"
-              class="px-3 py-2 rounded-md font-medium transition"
-              th:classappend="${#strings.contains(path, '/admin/dashboard')} ?
-             'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800 hover:text-white'"
-            >
-              Dashboard
-            </a>
-
-            <a
-              href="/admin/movies"
-              class="px-3 py-2 rounded-md font-medium transition"
-              th:classappend="${#strings.contains(path, '/admin/movies')} ?
-             'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800 hover:text-white'"
-            >
-              Movies
-            </a>
-
-            <a
-              href="/admin/screens"
-              class="px-3 py-2 rounded-md font-medium transition"
-              th:classappend="${#strings.contains(path, '/admin/screens')} ?
-             'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800 hover:text-white'"
-            >
-              Screens
-            </a>
-
-
-            <a
-              href="/admin/pricing"
-              class="px-3 py-2 rounded-md font-medium transition"
-              th:classappend="${#strings.contains(path, '/admin/pricing')} ?
-             'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800 hover:text-white'"
-            >
-              Pricing
-            </a>
-
-              <a
-                      href="/admin/schedules"
-                      class="px-3 py-2 rounded-md font-medium transition"
-                      th:classappend="${#strings.contains(path, '/admin/schedules')} ?
-             'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800 hover:text-white'"
-              >
-                  Schedules
-              </a>
-
-            <a
-              href="/admin/reports/revenue"
-              class="px-3 py-2 rounded-md font-medium transition"
-              th:classappend="${#strings.contains(path, '/admin/reports')} ?
-             'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800 hover:text-white'"
-            >
-              Revenue Report
-            </a>
-          </nav>
-
           <div class="flex items-center gap-4">
             <span
               class="hidden sm:inline text-sm text-slate-400"
-              th:text="${adminName} ?: 'Admin User'"
-              >Admin User</span
+              th:text="${adminName} ?: 'GateKeeper'"
+              >GateKeeper</span
             >
               <form th:action="@{/perform_logout}" method="post" class="inline">
                   <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>

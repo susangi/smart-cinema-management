@@ -16,7 +16,6 @@ import java.util.List;
         name = "bookings",
         indexes = {
                 @Index(name = "ix_booking_user", columnList = "user_id"),
-                // index should match the actual FK column name below ("schedule_time_id")
                 @Index(name = "ix_booking_schedule_time", columnList = "schedule_time_id")
         }
 )

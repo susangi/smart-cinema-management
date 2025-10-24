@@ -17,8 +17,6 @@ public class WebMvcConfig implements WebMvcConfigurer {
     @Value("${app.media.posters-url-base:/media/posters}")
     private String postersUrlBase;
 
-
-
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         String uploadPath = Paths.get("uploads").toFile().getAbsolutePath();

@@ -1,0 +1,52 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <title>Gatekeeper | QR Validation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+<div th:replace="~{gate/layout :: shell(~{::section})}">
+    <section>
+<div class="max-w-xl mx-auto p-6">
+    <h1 class="text-2xl font-bold mb-4">Gatekeeper — QR Validation</h1>
+
+    <div th:if="${result}" class="mb-4">
+        <div th:class="${result.success} ? 'bg-emerald-600' : 'bg-red-600'" class="rounded-lg p-4">
+            <div class="font-semibold" th:text="${result.message}">Result</div>
+            <div class="text-sm mt-1" th:if="${result.seatNumber}">
+                Seat: <span th:text="${result.seatNumber}">1</span>
+                <span th:if="${result.usedAt}">
+          • Used at <span th:text="${#temporals.format(result.usedAt,'yyyy-MM-dd HH:mm')}"></span>
+        </span>
+            </div>
+        </div>
+    </div>
+
+<!--    <form th:action="@{/gatekeeper/validate}" method="post" class="space-y-3 mb-8">-->
+<!--        <label class="block text-sm">-->
+<!--            <span>Paste QR value</span>-->
+<!--            <textarea name="qr" rows="3" required-->
+<!--                      class="w-full mt-1 rounded-md bg-slate-800 border border-slate-700 p-3"-->
+<!--                      th:text="${qrValue}"></textarea>-->
+<!--        </label>-->
+<!--        <button class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-md font-semibold">Validate</button>-->
+<!--    </form>-->
+
+    <form th:action="@{/gatekeeper/validate-image}" method="post" enctype="multipart/form-data" class="space-y-3">
+        <label class="block text-sm">
+            <span>Upload QR image (PNG/JPG)</span>
+            <input type="file" name="file" accept="image/png,image/jpeg"
+                   class="w-full mt-1 rounded-md bg-white border border-slate-700 p-3" required />
+        </label>
+        <button class="bg-emerald-600 hover:bg-emerald-700 px-4 py-2 rounded-md font-semibold text-gray-200">Validate from Image</button>
+    </form>
+
+    <p class="mt-6 text-xs text-slate-400">
+        Expected text inside QR: <code>TICKET:&lt;id&gt;;SCHEDULE:&lt;id&gt;</code> (or <code>TICKET:&lt;id&gt;</code>)
+    </p>
+</div>
+    </section>
+</div>
+</body>
+</html>
